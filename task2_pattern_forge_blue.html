@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pattern Forge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  :root {
+    --bg: #eef4ff;
+    --panel: #ffffff;
+    --panel-border: #d7e3fb;
+    --text: #16213a;
+    --muted: #6b7a99;
+    --blue: #2563eb;
+    --blue-light: #0ea5e9;
+    --blue-deep: #1d4ed8;
+    --sky: #38bdf8;
+    --navy: #0f2557;
+    --red: #e11d48;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .app { width: 100%; max-width: 640px; }
+
+  h1, h2 { font-family: 'Space Grotesk', sans-serif; margin: 0; }
+
+  .header { text-align: left; margin-bottom: 28px; }
+
+  .header .kicker { color: var(--blue); font-size: 13px; font-weight: 600; }
+
+  .header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-top: 4px;
+    background: linear-gradient(90deg, var(--blue), var(--sky));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 32px;
+    box-shadow: 0 8px 30px rgba(37, 99, 235, 0.08);
+  }
+
+  .field { margin-bottom: 20px; }
+
+  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+
+  .field select, .field input[type="number"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+  }
+
+  .field select:focus, .field input:focus { outline: none; border-color: var(--blue); }
+
+  .row-control { display: flex; align-items: center; gap: 12px; }
+
+  .row-control input[type="range"] { flex: 1; accent-color: var(--blue); }
+
+  .row-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--blue);
+    width: 30px;
+    text-align: center;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .switch {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 20px;
+    cursor: pointer;
+  }
+
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+
+  .switch.on { border-color: var(--blue); }
+  .switch.on::after { left: 20px; background: var(--blue); }
+
+  button {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    border-radius: 8px;
+    border: none;
+    padding: 13px 22px;
+    cursor: pointer;
+    width: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--sky));
+    color: white;
+    margin-bottom: 24px;
+    transition: transform 0.08s ease;
+  }
+
+  button:active { transform: scale(0.98); }
+
+  .btn-row { display: flex; gap: 10px; margin-bottom: 24px; }
+  .btn-row button { margin-bottom: 0; }
+
+  .btn-secondary {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    color: var(--blue);
+    font-size: 13px;
+    padding: 9px 14px;
+    width: auto;
+    margin-bottom: 0;
+  }
+
+  .output-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .stat-row { display: flex; gap: 12px; margin-top: 16px; }
+
+  .stat-chip {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .stat-chip .num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--blue);
+  }
+
+  .stat-chip .label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .logic-toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--blue);
+    cursor: pointer;
+  }
+
+  .logic-panel {
+    display: none;
+    margin-top: 10px;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--navy);
+    white-space: pre-wrap;
+  }
+
+  .logic-panel.open { display: block; }
+
+  .output-wrap {
+    background: var(--navy);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 20px;
+    overflow-x: auto;
+    min-height: 120px;
+  }
+
+  #pattern-output {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre;
+    color: #eaf2ff;
+  }
+
+  .pattern-row { opacity: 0; animation: fadeRow 0.25s ease forwards; }
+  @keyframes fadeRow { to { opacity: 1; } }
+
+  .num-color-0 { color: #93c5fd; }
+  .num-color-1 { color: #38bdf8; }
+  .num-color-2 { color: #ffffff; }
+  .num-color-3 { color: #60a5fa; }
+  .num-color-4 { color: #bae6fd; }
+
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  @media (max-width: 480px) {
+    .panel { padding: 20px; }
+    .header h1 { font-size: 26px; }
+    #pattern-output { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="kicker">Task 2 · Number Patterns</div>
+    <h1>Pattern Forge</h1>
+  </div>
+
+  <div class="panel">
+    <div class="field">
+      <label for="pattern-select">Pattern type</label>
+      <select id="pattern-select">
+        <optgroup label="Classic">
+          <option value="pyramid">Pyramid</option>
+          <option value="inverted">Inverted Pyramid</option>
+          <option value="diamond">Diamond</option>
+          <option value="triangle">Right Triangle</option>
+          <option value="hourglass">Hourglass</option>
+          <option value="hollowdiamond">Hollow Diamond</option>
+        </optgroup>
+        <optgroup label="Advanced">
+          <option value="pascal">Pascal's Triangle</option>
+          <option value="floyd">Floyd's Triangle</option>
+          <option value="palindrome">Palindromic Pyramid</option>
+          <option value="butterfly">Butterfly</option>
+          <option value="fibonacci">Fibonacci Triangle</option>
+          <option value="prime">Prime Number Triangle</option>
+          <option value="staircase">Diagonal Staircase</option>
+        </optgroup>
+        <optgroup label="Grid-based">
+          <option value="zigzag">Zigzag Grid</option>
+          <option value="spiral">Spiral Grid</option>
+          <option value="checkerboard">Binary Checkerboard</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="rows-range">Number of rows</label>
+      <div class="row-control">
+        <input type="range" id="rows-range" min="3" max="15" value="7">
+        <div class="row-value" id="rows-value">7</div>
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <span>Animate row-by-row build</span>
+      <div class="switch on" id="animate-switch" onclick="toggleAnimate()"></div>
+    </div>
+
+    <div class="field">
+      <label for="speed-range">Animation speed (ms per row)</label>
+      <div class="row-control">
+        <input type="range" id="speed-range" min="20" max="200" value="70" step="10">
+        <div class="row-value" id="speed-value">70</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button onclick="generatePattern()" style="flex: 2;">Generate Pattern</button>
+      <button class="btn-secondary" onclick="surpriseMe()" style="flex: 1;">🎲 Surprise Me</button>
+    </div>
+
+    <div class="output-wrap">
+      <div id="pattern-output"></div>
+    </div>
+
+    <div class="output-actions">
+      <button class="btn-ghost" onclick="copyPattern(event)">📋 Copy</button>
+      <button class="btn-ghost" onclick="downloadPattern()">⬇ Download .txt</button>
+    </div>
+
+    <div class="meta-row">
+      <span id="meta-rows">7 rows</span>
+      <span id="meta-type">Pyramid</span>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-chip"><div class="num" id="stat-count">0</div><div class="label">Numbers</div></div>
+      <div class="stat-chip"><div class="num" id="stat-sum">0</div><div class="label">Sum</div></div>
+      <div class="stat-chip"><div class="num" id="stat-max">0</div><div class="label">Largest</div></div>
+    </div>
+
+    <div class="logic-toggle-row" onclick="toggleLogic()">
+      <span id="logic-toggle-label">Show pattern logic ▾</span>
+    </div>
+    <div class="logic-panel" id="logic-panel"></div>
+  </div>
+</div>
+
+<script>
+  // ------------------------------------------------------------
+  // Pattern generation uses nested loops: the outer loop drives
+  // each row, the inner loop(s) build that row's spacing/numbers.
+  // ------------------------------------------------------------
+
+  const rowsRange = document.getElementById("rows-range");
+  const rowsValue = document.getElementById("rows-value");
+  const patternSelect = document.getElementById("pattern-select");
+  const speedRange = document.getElementById("speed-range");
+  const speedValue = document.getElementById("speed-value");
+  let animateOn = true;
+  let generationToken = 0;
+  let lastLines = [];
+  let logicOpen = false;
+
+  rowsRange.addEventListener("input", () => {
+    rowsValue.textContent = rowsRange.value;
+  });
+
+  speedRange.addEventListener("input", () => {
+    speedValue.textContent = speedRange.value;
+  });
+
+  function toggleAnimate() {
+    animateOn = !animateOn;
+    document.getElementById("animate-switch").classList.toggle("on", animateOn);
+  }
+
+  function buildPyramid(n) {
+    const lines = [];
+    for (let i = 1; i <= n; i++) {
+      const spaces = " ".repeat(n - i);
+      let nums = "";
+      for (let j = 1; j <= i; j++) nums += j;
+      lines.push(spaces + nums);
+    }
+    return lines;
+  }
+
+  function buildInverted(n) {
+    const lines = [];
+    for (let i = n; i >= 1; i--) {
+      const spaces = " ".repeat(n - i);
+      let nums = "";
+      for (let j = 1; j <= i; j++) nums += j;
+      lines.push(spaces + nums);
+    }
+    return lines;
+  }
+
+  function buildDiamond(n) {
+    return buildPyramid(n).concat(buildInverted(n - 1));
+  }
+
+  function buildHollowDiamond(n) {
+    const lines = [];
+    for (let i = 1; i <= n; i++) {
+      const spaces = " ".repeat(n - i);
+      if (i === 1) lines.push(spaces + "1");
+      else lines.push(spaces + "1" + " ".repeat(2 * (i - 2) + (i > 2 ? 1 : 0)) + i);
+    }
+    for (let i = n - 1; i >= 1; i--) {
+      const spaces = " ".repeat(n - i);
+      if (i === 1) lines.push(spaces + "1");
+      else lines.push(spaces + "1" + " ".repeat(2 * (i - 2) + (i > 2 ? 1 : 0)) + i);
+    }
+    return lines;
+  }
+
+  function buildTriangle(n) {
+    const lines = [];
+    for (let i = 1; i <= n; i++) lines.push(String(i).repeat(i));
+    return lines;
+  }
+
+  function buildHourglass(n) {
+    return buildInverted(n).concat(buildPyramid(n).slice(1));
+  }
+
+  function buildPascal(n) {
+    const lines = [];
+    let row = [1];
+    for (let i = 0; i < n; i++) {
+      const spaces = " ".repeat((n - i) * 2);
+      lines.push(spaces + row.join("  "));
+      const next = [1];
+      for (let j = 0; j < row.length - 1; j++) next.push(row[j] + row[j + 1]);
+      next.push(1);
+      row = next;
+    }
+    return lines;
+  }
+
+  function buildFloyd(n) {
+    const lines = [];
+    let counter = 1;
+    for (let i = 1; i <= n; i++) {
+      const rowNums = [];
+      for (let j = 1; j <= i; j++) { rowNums.push(counter); counter++; }
+      lines.push(rowNums.join(" "));
+    }
+    return lines;
+  }
+
+  function buildPalindrome(n) {
+    const lines = [];
+    for (let i = 1; i <= n; i++) {
+      const spaces = " ".repeat(n - i);
+      let ascending = "";
+      for (let j = 1; j <= i; j++) ascending += j;
+      let descending = "";
+      for (let j = i - 1; j >= 1; j--) descending += j;
+      lines.push(spaces + ascending + descending);
+    }
+    return lines;
+  }
+
+  function buildButterfly(n) {
+    const lines = [];
+    for (let i = 1; i <= n; i++) {
+      const digit = i % 10;
+      const wing = String(digit).repeat(i);
+      const gap = " ".repeat(2 * (n - i));
+      lines.push(wing + gap + wing);
+    }
+    for (let i = n; i >= 1; i--) {
+      const digit = i % 10;
+      const wing = String(digit).repeat(i);
+      const gap = " ".repeat(2 * (n - i));
+      lines.push(wing + gap + wing);
+    }
+    return lines;
+  }
+
+  function buildFibonacci(n) {
+    const lines = [];
+    let a = 1, b = 1;
+    const seq = [a, b];
+    while (seq.length < (n * (n + 1)) / 2) seq.push(seq[seq.length - 1] + seq[seq.length - 2]);
+    let idx = 0;
+    for (let i = 1; i <= n; i++) {
+      const rowVals = [];
+      for (let j = 0; j < i; j++) { rowVals.push(seq[idx]); idx++; }
+      lines.push(rowVals.join(" "));
+    }
+    return lines;
+  }
+
+  function isPrime(num) {
+    if (num < 2) return false;
+    for (let i = 2; i * i <= num; i++) if (num % i === 0) return false;
+    return true;
+  }
+
+  function buildPrime(n) {
+    const lines = [];
+    let candidate = 2;
+    for (let i = 1; i <= n; i++) {
+      const rowVals = [];
+      for (let j = 0; j < i; j++) {
+        while (!isPrime(candidate)) candidate++;
+        rowVals.push(candidate);
+        candidate++;
+      }
+      lines.push(rowVals.join(" "));
+    }
+    return lines;
+  }
+
+  function buildStaircase(n) {
+    const lines = [];
+    for (let i = 1; i <= n; i++) {
+      let row = "";
+      for (let j = 1; j <= n; j++) {
+        row += (j <= i) ? String(j % 10) + " " : "  ";
+      }
+      lines.push(row);
+    }
+    return lines;
+  }
+
+  function buildZigzag(n) {
+    const size = n;
+    const grid = Array.from({ length: size }, () => Array(size).fill(0));
+    let counter = 1;
+    for (let row = 0; row < size; row++) {
+      if (row % 2 === 0) {
+        for (let col = 0; col < size; col++) grid[row][col] = counter++;
+      } else {
+        for (let col = size - 1; col >= 0; col--) grid[row][col] = counter++;
+      }
+    }
+    const width = String(size * size).length;
+    return grid.map(row => row.map(v => String(v).padStart(width, " ")).join(" "));
+  }
+
+  function buildSpiral(n) {
+    const size = n;
+    const grid = Array.from({ length: size }, () => Array(size).fill(0));
+    let counter = 1;
+    let top = 0, bottom = size - 1, left = 0, right = size - 1;
+    while (top <= bottom && left <= right) {
+      for (let col = left; col <= right; col++) grid[top][col] = counter++;
+      top++;
+      for (let row = top; row <= bottom; row++) grid[row][right] = counter++;
+      right--;
+      if (top <= bottom) {
+        for (let col = right; col >= left; col--) grid[bottom][col] = counter++;
+        bottom--;
+      }
+      if (left <= right) {
+        for (let row = bottom; row >= top; row--) grid[row][left] = counter++;
+        left--;
+      }
+    }
+    const width = String(size * size).length;
+    return grid.map(row => row.map(v => String(v).padStart(width, " ")).join(" "));
+  }
+
+  function buildCheckerboard(n) {
+    const lines = [];
+    for (let i = 0; i < n; i++) {
+      let row = "";
+      for (let j = 0; j < n; j++) {
+        row += ((i + j) % 2 === 0) ? "1 " : "0 ";
+      }
+      lines.push(row.trim());
+    }
+    return lines;
+  }
+
+  const LOGIC_MAP = {
+    pyramid: "for i in 1..n:\n  print (n - i) spaces, then digits 1..i",
+    inverted: "for i in n..1:\n  print (n - i) spaces, then digits 1..i",
+    diamond: "pyramid(n) followed by inverted(n - 1)",
+    triangle: "for i in 1..n:\n  print digit i repeated i times",
+    hourglass: "inverted(n) followed by pyramid(n), skipping its first row",
+    hollowdiamond: "for each row: print '1' at the left edge, spaces, then the row number at the right edge",
+    pascal: "start with [1]\nfor each row:\n  print it\n  next row = 1, then sum of each adjacent pair, then 1",
+    floyd: "counter starts at 1\nfor i in 1..n:\n  row i takes the next i numbers from the counter",
+    palindrome: "for i in 1..n:\n  print digits 1..i ascending, then (i-1)..1 descending",
+    butterfly: "for i in 1..n:\n  print digit(i) repeated i times, a gap, then repeated again\nmirror the same rows upside down below",
+    fibonacci: "generate a flat Fibonacci sequence\nsplit it into rows of length 1, 2, 3, ... n",
+    prime: "generate a flat sequence of prime numbers\nsplit it into rows of length 1, 2, 3, ... n",
+    staircase: "for row i:\n  fill columns 1..i with digits, leave the rest blank",
+    zigzag: "fill an n×n grid left-to-right on even rows,\nright-to-left on odd rows (snake order)",
+    spiral: "fill an n×n grid starting at top-left,\nspiraling inward: right, down, left, up, repeat",
+    checkerboard: "for each cell (i, j):\n  print 1 if (i + j) is even, else 0"
+  };
+
+  function computeStats(lines) {
+    const allNumbers = lines.join(" ").match(/\d+/g) || [];
+    const nums = allNumbers.map(Number);
+    const sum = nums.reduce((a, b) => a + b, 0);
+    const max = nums.length ? Math.max(...nums) : 0;
+    document.getElementById("stat-count").textContent = nums.length;
+    document.getElementById("stat-sum").textContent = sum;
+    document.getElementById("stat-max").textContent = max;
+  }
+
+  function toggleLogic() {
+    logicOpen = !logicOpen;
+    const panel = document.getElementById("logic-panel");
+    panel.classList.toggle("open", logicOpen);
+    document.getElementById("logic-toggle-label").textContent =
+      logicOpen ? "Hide pattern logic ▴" : "Show pattern logic ▾";
+  }
+
+  function copyPattern(evt) {
+    const text = lastLines.join("\n");
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = evt.target;
+      const original = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(() => { btn.textContent = original; }, 1200);
+    });
+  }
+
+  function downloadPattern() {
+    const type = patternSelect.value;
+    const text = lastLines.join("\n");
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pattern_${type}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function surpriseMe() {
+    const options = Array.from(patternSelect.querySelectorAll("option"));
+    const randomOption = options[Math.floor(Math.random() * options.length)];
+    patternSelect.value = randomOption.value;
+
+    const randomRows = Math.floor(Math.random() * 10) + 4; // 4-13
+    rowsRange.value = Math.min(randomRows, rowsRange.max);
+    rowsValue.textContent = rowsRange.value;
+
+    generatePattern();
+  }
+
+  function generatePattern() {
+    generationToken++;
+    const myToken = generationToken;
+
+    const n = parseInt(rowsRange.value);
+    const type = patternSelect.value;
+    const typeLabels = {
+      pyramid: "Pyramid", inverted: "Inverted Pyramid", diamond: "Diamond",
+      triangle: "Right Triangle", pascal: "Pascal's Triangle", hourglass: "Hourglass",
+      floyd: "Floyd's Triangle", palindrome: "Palindromic Pyramid", butterfly: "Butterfly",
+      zigzag: "Zigzag Grid", spiral: "Spiral Grid", hollowdiamond: "Hollow Diamond",
+      fibonacci: "Fibonacci Triangle", prime: "Prime Number Triangle",
+      staircase: "Diagonal Staircase", checkerboard: "Binary Checkerboard"
+    };
+
+    let lines;
+    switch (type) {
+      case "pyramid": lines = buildPyramid(n); break;
+      case "inverted": lines = buildInverted(n); break;
+      case "diamond": lines = buildDiamond(n); break;
+      case "triangle": lines = buildTriangle(n); break;
+      case "pascal": lines = buildPascal(Math.min(n, 12)); break;
+      case "hourglass": lines = buildHourglass(n); break;
+      case "floyd": lines = buildFloyd(n); break;
+      case "palindrome": lines = buildPalindrome(n); break;
+      case "butterfly": lines = buildButterfly(n); break;
+      case "zigzag": lines = buildZigzag(Math.min(n, 10)); break;
+      case "spiral": lines = buildSpiral(Math.min(n, 10)); break;
+      case "hollowdiamond": lines = buildHollowDiamond(n); break;
+      case "fibonacci": lines = buildFibonacci(Math.min(n, 10)); break;
+      case "prime": lines = buildPrime(Math.min(n, 10)); break;
+      case "staircase": lines = buildStaircase(n); break;
+      case "checkerboard": lines = buildCheckerboard(Math.min(n, 15)); break;
+    }
+
+    document.getElementById("meta-rows").textContent = `${lines.length} rows`;
+    document.getElementById("meta-type").textContent = typeLabels[type];
+
+    lastLines = lines;
+    computeStats(lines);
+
+    const logicPanel = document.getElementById("logic-panel");
+    logicPanel.textContent = LOGIC_MAP[type] || "";
+
+    const output = document.getElementById("pattern-output");
+    output.innerHTML = "";
+
+    if (!animateOn) {
+      lines.forEach((line, i) => {
+        const div = document.createElement("div");
+        div.textContent = line;
+        div.className = "num-color-" + (i % 5);
+        output.appendChild(div);
+      });
+      return;
+    }
+
+    const speed = parseInt(speedRange.value);
+    lines.forEach((line, i) => {
+      setTimeout(() => {
+        if (myToken !== generationToken) return;
+        const div = document.createElement("div");
+        div.textContent = line;
+        div.className = "pattern-row num-color-" + (i % 5);
+        output.appendChild(div);
+      }, i * speed);
+    });
+  }
+
+  generatePattern();
+</script>
+
+</body>
+</html>

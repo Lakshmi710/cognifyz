@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanban Vault</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  :root {
+    --bg: #faf6ef;
+    --panel: #ffffff;
+    --panel-border: #e8ddc9;
+    --text: #2b2420;
+    --muted: #8a7d68;
+    --terracotta: #c1502e;
+    --sage: #6b8f71;
+    --gold: #d4a017;
+    --red: #c0392b;
+    --col-bg: #f2ead9;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .app { width: 100%; max-width: 980px; margin: 0 auto; }
+
+  h1, h2 { font-family: 'Space Grotesk', sans-serif; margin: 0; }
+
+  .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; }
+  .header .kicker { color: var(--terracotta); font-size: 13px; font-weight: 600; }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-top: 4px;
+    color: var(--terracotta);
+  }
+
+  .save-indicator { font-size: 12px; color: var(--sage); opacity: 0; transition: opacity 0.3s ease; }
+  .save-indicator.show { opacity: 1; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 6px 20px rgba(193, 80, 46, 0.06);
+  }
+
+  .stat-row { display: flex; gap: 12px; margin-bottom: 18px; }
+
+  .stat-chip { flex: 1; background: var(--col-bg); border: 1px solid var(--panel-border); border-radius: 10px; padding: 12px; text-align: center; }
+  .stat-chip .num { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; color: var(--terracotta); }
+  .stat-chip .label { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+  .form-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+  .field label { display: block; font-size: 11.5px; color: var(--muted); margin-bottom: 5px; }
+
+  .field input, .field select, .field textarea {
+    width: 100%;
+    background: var(--col-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 9px 11px;
+    font-size: 13.5px;
+    font-family: inherit;
+  }
+
+  .field textarea { resize: vertical; min-height: 40px; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--terracotta); }
+
+  .subtask-input-row { display: flex; gap: 6px; margin-top: 6px; }
+  .subtask-input-row input { flex: 1; }
+  .subtask-input-row button { width: auto; padding: 8px 12px; font-size: 12px; }
+
+  .subtask-draft-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+  .subtask-draft-item { display: flex; justify-content: space-between; align-items: center; background: var(--col-bg); border-radius: 6px; padding: 5px 9px; font-size: 12px; }
+  .subtask-draft-item button { width: auto; padding: 2px 7px; font-size: 11px; background: transparent; color: var(--red); border: none; }
+
+  button {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 13.5px;
+    border-radius: 8px;
+    border: none;
+    padding: 11px 16px;
+    cursor: pointer;
+  }
+
+  .btn-primary { background: var(--terracotta); color: white; width: 100%; }
+  .btn-secondary { background: var(--col-bg); border: 1px solid var(--panel-border); color: var(--text); }
+
+  .toolbar { display: flex; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+
+  .toolbar input[type="text"] {
+    flex: 2; min-width: 160px;
+    background: var(--col-bg); border: 1px solid var(--panel-border); border-radius: 8px;
+    padding: 9px 11px; font-size: 13px; color: var(--text);
+  }
+
+  .toolbar select {
+    flex: 1;
+    background: var(--col-bg); border: 1px solid var(--panel-border); border-radius: 8px;
+    padding: 9px 11px; font-size: 13px; color: var(--text);
+  }
+
+  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+
+  .column {
+    background: var(--col-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 12px;
+    min-height: 200px;
+  }
+
+  .column.drag-over { border-color: var(--terracotta); background: rgba(193,80,46,0.05); }
+
+  .column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0 2px;
+  }
+
+  .column-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; }
+  .column-count { font-size: 11px; color: var(--muted); background: var(--panel); padding: 2px 8px; border-radius: 10px; }
+
+  .col-todo .column-title { color: var(--gold); }
+  .col-progress .column-title { color: var(--terracotta); }
+  .col-done .column-title { color: var(--sage); }
+
+  .card-list { display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
+
+  .task-card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 11px 12px;
+    cursor: grab;
+  }
+
+  .task-card:active { cursor: grabbing; }
+  .task-card.dragging { opacity: 0.4; }
+
+  .task-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13.5px; margin-bottom: 4px; word-break: break-word; }
+  .task-desc { font-size: 11.5px; color: var(--muted); margin-bottom: 7px; word-break: break-word; }
+
+  .task-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 7px; }
+
+  .tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .tag-priority-low { background: rgba(107,143,113,0.15); color: var(--sage); }
+  .tag-priority-medium { background: rgba(212,160,23,0.18); color: var(--gold); }
+  .tag-priority-high { background: rgba(192,57,43,0.14); color: var(--red); }
+  .tag-due { background: rgba(193,80,46,0.1); color: var(--terracotta); font-family: 'JetBrains Mono', monospace; }
+  .tag-overdue { background: rgba(192,57,43,0.18); color: var(--red); font-weight: 700; }
+
+  .subtask-progress { font-size: 10.5px; color: var(--muted); margin-bottom: 6px; }
+  .subtask-bar-track { height: 4px; background: var(--panel-border); border-radius: 4px; overflow: hidden; margin-bottom: 7px; }
+  .subtask-bar-fill { height: 100%; background: var(--sage); }
+
+  .card-actions { display: flex; gap: 5px; justify-content: flex-end; }
+
+  .icon-btn {
+    background: var(--col-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    width: 26px; height: 26px;
+    padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+
+  .empty-col { text-align: center; color: var(--muted); font-size: 11.5px; padding: 16px 4px; }
+
+  .file-actions { display: flex; gap: 10px; margin-bottom: 16px; }
+  .file-actions button { flex: 1; }
+
+  .activity-log { max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+  .activity-item { font-size: 11.5px; color: var(--muted); font-family: 'JetBrains Mono', monospace; padding: 5px 0; border-bottom: 1px dashed var(--panel-border); }
+  .activity-empty { font-size: 12px; color: var(--muted); text-align: center; padding: 10px; }
+
+  @media (max-width: 720px) {
+    .board { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div>
+      <div class="kicker">Task 5 · Persistent CRUD App</div>
+      <h1>Kanban Vault</h1>
+    </div>
+    <div class="save-indicator" id="save-indicator">✓ Saved</div>
+  </div>
+
+  <div class="panel">
+    <div class="stat-row">
+      <div class="stat-chip"><div class="num" id="stat-total">0</div><div class="label">Total</div></div>
+      <div class="stat-chip"><div class="num" id="stat-todo">0</div><div class="label">To Do</div></div>
+      <div class="stat-chip"><div class="num" id="stat-progress">0</div><div class="label">In Progress</div></div>
+      <div class="stat-chip"><div class="num" id="stat-done">0</div><div class="label">Done</div></div>
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="task-title">Title</label>
+        <input type="text" id="task-title" placeholder="e.g. Record submission video">
+      </div>
+      <div class="field">
+        <label for="task-priority">Priority</label>
+        <select id="task-priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="task-desc">Description (optional)</label>
+        <textarea id="task-desc" placeholder="Details..."></textarea>
+      </div>
+      <div class="field">
+        <label for="task-due">Due date (optional)</label>
+        <input type="date" id="task-due">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Subtasks (optional)</label>
+      <div class="subtask-input-row">
+        <input type="text" id="subtask-draft-input" placeholder="Add a checklist step, press Enter">
+        <button class="btn-secondary" onclick="addSubtaskDraft()">Add</button>
+      </div>
+      <div class="subtask-draft-list" id="subtask-draft-list"></div>
+    </div>
+
+    <button class="btn-primary" onclick="addOrUpdateTask()" id="submit-btn">Add Task</button>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <input type="text" id="search-input" placeholder="Search tasks..." oninput="renderBoard()">
+      <select id="filter-priority" onchange="renderBoard()">
+        <option value="all">All priorities</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+
+    <div class="board" id="board">
+      <div class="column col-todo" data-status="todo" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <div class="column-header"><span class="column-title">To Do</span><span class="column-count" id="count-todo">0</span></div>
+        <div class="card-list" id="list-todo"></div>
+      </div>
+      <div class="column col-progress" data-status="progress" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <div class="column-header"><span class="column-title">In Progress</span><span class="column-count" id="count-progress">0</span></div>
+        <div class="card-list" id="list-progress"></div>
+      </div>
+      <div class="column col-done" data-status="done" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <div class="column-header"><span class="column-title">Done</span><span class="column-count" id="count-done">0</span></div>
+        <div class="card-list" id="list-done"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label style="display:block; font-size: 11.5px; color: var(--muted); margin-bottom: 12px;">
+      Persistence — auto-saves to this browser. Use these to save/load an actual file.
+    </label>
+    <div class="file-actions">
+      <button class="btn-secondary" onclick="exportTasks()">⬇ Export to file</button>
+      <button class="btn-secondary" onclick="document.getElementById('import-input').click()">⬆ Import from file</button>
+      <input type="file" id="import-input" accept=".json" style="display:none" onchange="importTasks(event)">
+    </div>
+    <label style="display:block; font-size: 11.5px; color: var(--muted); margin-bottom: 8px;">Activity log</label>
+    <div class="activity-log" id="activity-log">
+      <div class="activity-empty">No activity yet.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ------------------------------------------------------------
+  // CRUD + drag-and-drop Kanban state.
+  // Persistence: auto-save to localStorage on every change, plus
+  // explicit Export/Import to a real .json file (the literal file
+  // I/O the task asks for).
+  // ------------------------------------------------------------
+
+  const STORAGE_KEY = "kanban_vault_data";
+  let tasks = [];
+  let editingId = null;
+  let nextId = 1;
+  let subtaskDraft = [];
+  let activityLog = [];
+  let draggedId = null;
+
+  function loadTasks() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        tasks = parsed.tasks || [];
+        nextId = parsed.nextId || (tasks.length ? Math.max(...tasks.map(t => t.id)) + 1 : 1);
+        activityLog = parsed.activityLog || [];
+      }
+    } catch (e) {
+      console.warn("Could not load saved tasks:", e);
+    }
+  }
+
+  function saveTasks() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, nextId, activityLog }));
+      flashSaved();
+    } catch (e) {
+      console.warn("Could not save tasks:", e);
+    }
+  }
+
+  function flashSaved() {
+    const el = document.getElementById("save-indicator");
+    el.classList.add("show");
+    clearTimeout(flashSaved._t);
+    flashSaved._t = setTimeout(() => el.classList.remove("show"), 1200);
+  }
+
+  function logActivity(text) {
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    activityLog.unshift(`${text} — ${time}`);
+    if (activityLog.length > 15) activityLog.pop();
+    renderActivity();
+  }
+
+  function renderActivity() {
+    const container = document.getElementById("activity-log");
+    if (activityLog.length === 0) {
+      container.innerHTML = '<div class="activity-empty">No activity yet.</div>';
+      return;
+    }
+    container.innerHTML = activityLog.map(a => `<div class="activity-item">${escapeHtml(a)}</div>`).join("");
+  }
+
+  // ---- Subtask draft (while composing a new/edited task) ----
+  document.getElementById("subtask-draft-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addSubtaskDraft(); }
+  });
+
+  function addSubtaskDraft() {
+    const input = document.getElementById("subtask-draft-input");
+    const text = input.value.trim();
+    if (!text) return;
+    subtaskDraft.push({ text, done: false });
+    input.value = "";
+    renderSubtaskDraft();
+  }
+
+  function removeSubtaskDraft(index) {
+    subtaskDraft.splice(index, 1);
+    renderSubtaskDraft();
+  }
+
+  function renderSubtaskDraft() {
+    const container = document.getElementById("subtask-draft-list");
+    container.innerHTML = subtaskDraft.map((s, i) => `
+      <div class="subtask-draft-item">
+        <span>${escapeHtml(s.text)}</span>
+        <button onclick="removeSubtaskDraft(${i})">✕</button>
+      </div>
+    `).join("");
+  }
+
+  // ---- CRUD ----
+  function addOrUpdateTask() {
+    const title = document.getElementById("task-title").value.trim();
+    const desc = document.getElementById("task-desc").value.trim();
+    const priority = document.getElementById("task-priority").value;
+    const due = document.getElementById("task-due").value;
+
+    if (!title) { alert("Please enter a task title."); return; }
+
+    if (editingId !== null) {
+      const task = tasks.find(t => t.id === editingId);
+      if (task) {
+        task.title = title;
+        task.desc = desc;
+        task.priority = priority;
+        task.due = due;
+        task.subtasks = subtaskDraft.slice();
+        logActivity(`Updated "${title}"`);
+      }
+      editingId = null;
+      document.getElementById("submit-btn").textContent = "Add Task";
+    } else {
+      tasks.push({
+        id: nextId++,
+        title, desc, priority, due,
+        status: "todo",
+        subtasks: subtaskDraft.slice(),
+        createdAt: Date.now()
+      });
+      logActivity(`Created "${title}"`);
+    }
+
+    document.getElementById("task-title").value = "";
+    document.getElementById("task-desc").value = "";
+    document.getElementById("task-due").value = "";
+    document.getElementById("task-priority").value = "medium";
+    subtaskDraft = [];
+    renderSubtaskDraft();
+
+    saveTasks();
+    renderBoard();
+  }
+
+  function editTask(id) {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    document.getElementById("task-title").value = task.title;
+    document.getElementById("task-desc").value = task.desc || "";
+    document.getElementById("task-priority").value = task.priority;
+    document.getElementById("task-due").value = task.due || "";
+    subtaskDraft = (task.subtasks || []).slice();
+    renderSubtaskDraft();
+    editingId = id;
+    document.getElementById("submit-btn").textContent = "Save Changes";
+    document.getElementById("task-title").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function deleteTask(id) {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    if (!confirm(`Delete "${task.title}"?`)) return;
+    tasks = tasks.filter(t => t.id !== id);
+    logActivity(`Deleted "${task.title}"`);
+    saveTasks();
+    renderBoard();
+  }
+
+  function toggleSubtask(taskId, subIndex) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.subtasks[subIndex]) return;
+    task.subtasks[subIndex].done = !task.subtasks[subIndex].done;
+    saveTasks();
+    renderBoard();
+  }
+
+  function moveTask(id, newStatus) {
+    const task = tasks.find(t => t.id === id);
+    if (!task || task.status === newStatus) return;
+    const labels = { todo: "To Do", progress: "In Progress", done: "Done" };
+    task.status = newStatus;
+    logActivity(`Moved "${task.title}" to ${labels[newStatus]}`);
+    saveTasks();
+    renderBoard();
+  }
+
+  // ---- Drag and drop ----
+  function onDragStart(evt, id) {
+    draggedId = id;
+    evt.target.classList.add("dragging");
+  }
+
+  function onDragEnd(evt) {
+    evt.target.classList.remove("dragging");
+  }
+
+  function onDragOver(evt) {
+    evt.preventDefault();
+    evt.currentTarget.classList.add("drag-over");
+  }
+
+  function onDragLeave(evt) {
+    evt.currentTarget.classList.remove("drag-over");
+  }
+
+  function onDrop(evt) {
+    evt.preventDefault();
+    evt.currentTarget.classList.remove("drag-over");
+    const status = evt.currentTarget.dataset.status;
+    if (draggedId !== null) moveTask(draggedId, status);
+    draggedId = null;
+  }
+
+  // ---- Rendering ----
+  function isOverdue(task) {
+    if (!task.due || task.status === "done") return false;
+    const today = new Date().toISOString().split("T")[0];
+    return task.due < today;
+  }
+
+  function renderCard(task) {
+    const subtasks = task.subtasks || [];
+    const doneCount = subtasks.filter(s => s.done).length;
+    const pct = subtasks.length ? Math.round((doneCount / subtasks.length) * 100) : null;
+    const overdue = isOverdue(task);
+
+    const subtasksHtml = subtasks.length ? `
+      <div class="subtask-progress">${doneCount}/${subtasks.length} subtasks</div>
+      <div class="subtask-bar-track"><div class="subtask-bar-fill" style="width:${pct}%"></div></div>
+    ` : "";
+
+    return `
+      <div class="task-card" draggable="true"
+           ondragstart="onDragStart(event, ${task.id})"
+           ondragend="onDragEnd(event)">
+        <div class="task-title">${escapeHtml(task.title)}</div>
+        ${task.desc ? `<div class="task-desc">${escapeHtml(task.desc)}</div>` : ""}
+        <div class="task-meta">
+          <span class="tag tag-priority-${task.priority}">${task.priority}</span>
+          ${task.due ? `<span class="tag ${overdue ? "tag-overdue" : "tag-due"}">${overdue ? "Overdue: " : ""}${task.due}</span>` : ""}
+        </div>
+        ${subtasksHtml}
+        <div class="card-actions">
+          <button class="icon-btn" onclick="editTask(${task.id})" title="Edit">✎</button>
+          <button class="icon-btn" onclick="deleteTask(${task.id})" title="Delete">🗑</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderBoard() {
+    const search = document.getElementById("search-input").value.toLowerCase();
+    const priorityFilter = document.getElementById("filter-priority").value;
+
+    const filtered = tasks.filter(t => {
+      const matchesSearch = t.title.toLowerCase().includes(search) || (t.desc || "").toLowerCase().includes(search);
+      const matchesPriority = priorityFilter === "all" || t.priority === priorityFilter;
+      return matchesSearch && matchesPriority;
+    });
+
+    ["todo", "progress", "done"].forEach(status => {
+      const col = filtered.filter(t => t.status === status);
+      const listEl = document.getElementById("list-" + status);
+      listEl.innerHTML = col.length
+        ? col.map(renderCard).join("")
+        : '<div class="empty-col">Drop tasks here</div>';
+      document.getElementById("count-" + status).textContent = col.length;
+    });
+
+    updateStats();
+  }
+
+  function updateStats() {
+    document.getElementById("stat-total").textContent = tasks.length;
+    document.getElementById("stat-todo").textContent = tasks.filter(t => t.status === "todo").length;
+    document.getElementById("stat-progress").textContent = tasks.filter(t => t.status === "progress").length;
+    document.getElementById("stat-done").textContent = tasks.filter(t => t.status === "done").length;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ---- File I/O ----
+  function exportTasks() {
+    const data = JSON.stringify({ tasks, nextId, activityLog }, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "kanban_vault_export.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importTasks(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (!Array.isArray(parsed.tasks)) throw new Error("Invalid file.");
+        tasks = parsed.tasks;
+        nextId = parsed.nextId || (tasks.length ? Math.max(...tasks.map(t => t.id)) + 1 : 1);
+        activityLog = parsed.activityLog || [];
+        logActivity(`Imported ${tasks.length} task(s) from file`);
+        saveTasks();
+        renderBoard();
+        alert(`Imported ${tasks.length} task(s) successfully.`);
+      } catch (err) {
+        alert("Could not read that file — make sure it's a Kanban Vault export.");
+      }
+    };
+    reader.readAsText(file);
+    evt.target.value = "";
+  }
+
+  // Init
+  loadTasks();
+  renderBoard();
+  renderActivity();
+</script>
+
+</body>
+</html>

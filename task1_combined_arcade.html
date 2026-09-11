@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task 1 Arcade</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #12121f;
+    --panel: #1c1e30;
+    --panel-border: #2b2e47;
+    --text: #edeef7;
+    --muted: #8b8fa8;
+    --violet: #8b5cf6;
+    --coral: #f0466e;
+    --green: #33d69f;
+    --amber: #f5b942;
+    --cell: #262940;
+    --cell-hover: #2f3350;
+    --cell-revealed: #12121f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .app { width: 100%; max-width: 620px; }
+
+  h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; margin: 0; }
+
+  .header { text-align: left; margin-bottom: 28px; }
+
+  .header .kicker { color: var(--violet); font-size: 13px; font-weight: 600; }
+
+  .header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-top: 4px;
+    background: linear-gradient(90deg, var(--violet), var(--coral));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 32px;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---- Mode select ---- */
+  .mode-cards { display: grid; gap: 14px; margin-bottom: 6px; }
+
+  .mode-card {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s ease;
+  }
+
+  .mode-card:hover { border-color: var(--violet); }
+
+  .mode-card .mode-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+
+  .mode-card .mode-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  .mode-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    margin-top: 10px;
+    background: rgba(139,92,246,0.18);
+    color: var(--violet);
+  }
+
+  /* ---- Shared form fields ---- */
+  .field { margin-bottom: 20px; }
+
+  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+
+  .field input, .field select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+  }
+
+  .field input:focus, .field select:focus { outline: none; border-color: var(--violet); }
+
+  .stat-row { display: flex; gap: 12px; margin-bottom: 24px; }
+
+  .stat-chip {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .stat-chip .num { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--violet); }
+  .stat-chip .label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .rules {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 24px;
+    padding: 14px 16px;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+  }
+
+  button {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    border-radius: 8px;
+    border: none;
+    padding: 13px 22px;
+    cursor: pointer;
+    transition: transform 0.08s ease, opacity 0.15s ease;
+  }
+
+  button:active { transform: scale(0.98); }
+
+  .btn-primary { background: linear-gradient(90deg, var(--violet), var(--coral)); color: white; width: 100%; }
+  .btn-secondary { background: transparent; border: 1px solid var(--panel-border); color: var(--text); }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row button { flex: 1; }
+
+  /* ---- Quiz screen ---- */
+  .quiz-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .lives { display: flex; gap: 4px; font-size: 16px; }
+  .life-lost { opacity: 0.25; }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    margin-right: 6px;
+  }
+
+  .tag-cat { background: rgba(139,92,246,0.18); color: var(--violet); }
+  .tag-diff-easy { background: rgba(51,214,159,0.15); color: var(--green); }
+  .tag-diff-medium { background: rgba(245,185,66,0.15); color: var(--amber); }
+  .tag-diff-hard { background: rgba(240,70,110,0.15); color: var(--coral); }
+
+  .question { font-size: 20px; font-weight: 600; line-height: 1.4; margin: 16px 0 24px; }
+
+  .options { display: grid; gap: 10px; margin-bottom: 20px; }
+
+  .option {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: left;
+    color: var(--text);
+    font-size: 14.5px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+  }
+
+  .option:hover:not(:disabled) { border-color: var(--violet); }
+  .option:disabled { cursor: default; }
+  .option .letter { color: var(--muted); font-weight: 600; }
+  .option.correct { border-color: var(--green); background: rgba(51,214,159,0.1); }
+  .option.wrong { border-color: var(--coral); background: rgba(240,70,110,0.1); }
+
+  .feedback { font-size: 14px; margin-bottom: 20px; min-height: 20px; }
+  .feedback.correct-text { color: var(--green); }
+  .feedback.wrong-text { color: var(--coral); }
+
+  .explanation { font-size: 13px; color: var(--muted); margin-top: -10px; margin-bottom: 20px; line-height: 1.5; }
+
+  .quiz-bottom { display: flex; justify-content: space-between; gap: 10px; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--panel-border); }
+  .btn-ghost:disabled { opacity: 0.4; cursor: default; }
+
+  /* ---- Minefield screen ---- */
+  .game-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+
+  .game-stat {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .game-stat .lbl { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 11px; color: var(--muted); }
+
+  .mode-toggle { display: flex; gap: 6px; margin-bottom: 16px; }
+
+  .mode-btn {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    color: var(--muted);
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .mode-btn.active { border-color: var(--violet); color: var(--text); background: rgba(139,92,246,0.12); }
+
+  .board-wrap { overflow-x: auto; padding-bottom: 6px; }
+
+  #board { display: grid; gap: 3px; margin: 0 auto; width: fit-content; }
+
+  .cell {
+    width: 30px;
+    height: 30px;
+    background: var(--cell);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .cell:hover:not(.revealed) { background: var(--cell-hover); }
+  .cell.revealed { background: var(--cell-revealed); cursor: default; border: 1px solid var(--panel-border); }
+  .cell.mine-hit { background: var(--coral); }
+  .cell.flagged { background: rgba(245,185,66,0.18); }
+
+  .n1 { color: #6fa8ff; } .n2 { color: var(--green); } .n3 { color: var(--coral); }
+  .n4 { color: #a26fff; } .n5 { color: var(--amber); } .n6 { color: #4fd8d8; }
+  .n7 { color: #edeef7; } .n8 { color: var(--muted); }
+
+  .game-footer { margin-top: 18px; text-align: center; }
+  .game-footer button { width: auto; padding: 10px 20px; font-size: 13px; }
+
+  /* ---- Results (shared) ---- */
+  .result-banner { text-align: center; margin-bottom: 24px; }
+  .result-banner .status { font-size: 13px; color: var(--muted); }
+  .result-banner h2 { font-size: 26px; margin-top: 6px; }
+
+  .score-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 24px 0; }
+
+  .score-cell {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .score-cell .val { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; }
+  .score-cell .lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .verdict { text-align: center; font-size: 14px; color: var(--amber); font-weight: 600; margin-bottom: 24px; }
+
+  @media (max-width: 480px) {
+    .panel { padding: 20px; }
+    .header h1 { font-size: 26px; }
+    .question { font-size: 17px; }
+    .cell { width: 24px; height: 24px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="kicker" id="header-kicker">Task 1 · Choose a Mode</div>
+    <h1 id="header-title">Task 1 Arcade</h1>
+  </div>
+
+  <div class="panel">
+
+    <!-- MODE SELECT -->
+    <div class="screen active" id="mode-screen">
+      <div class="mode-cards">
+        <div class="mode-card" onclick="enterQuizSetup()">
+          <div class="mode-title">Quiz Challenge</div>
+          <div class="mode-desc">Answer tough General Knowledge, Science, and Programming questions against 3 lives and 2 hints.</div>
+          <span class="mode-tag">Trivia</span>
+        </div>
+        <div class="mode-card" onclick="enterMineSetup()">
+          <div class="mode-title">Minefield</div>
+          <div class="mode-desc">Classic Minesweeper-style logic puzzle. Deduce safe cells from the numbers — no lives, no hints.</div>
+          <span class="mode-tag">Logic Puzzle</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUIZ SETUP -->
+    <div class="screen" id="quiz-setup-screen">
+      <div class="field">
+        <label for="player-name">Your name</label>
+        <input type="text" id="player-name" placeholder="Player" maxlength="20">
+      </div>
+      <div class="field">
+        <label for="category-select">Category</label>
+        <select id="category-select">
+          <option value="mixed">Mixed</option>
+          <option value="general">General Knowledge</option>
+          <option value="science">Science</option>
+          <option value="programming">Programming &amp; CS</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="difficulty-select">Difficulty</label>
+        <select id="difficulty-select">
+          <option value="hard" selected>Hard</option>
+          <option value="mixed">Mixed</option>
+          <option value="medium">Medium</option>
+          <option value="easy">Easy</option>
+        </select>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-chip"><div class="num" id="stat-questions">10</div><div class="label">Questions</div></div>
+        <div class="stat-chip"><div class="num">3</div><div class="label">Lives</div></div>
+        <div class="stat-chip"><div class="num">2</div><div class="label">Hints</div></div>
+      </div>
+
+      <div class="btn-row" style="margin-bottom: 12px;">
+        <button class="btn-secondary" onclick="backToMenu()">Back to menu</button>
+        <button class="btn-primary" onclick="startQuiz()" style="flex: 2;">Start Quiz</button>
+      </div>
+    </div>
+
+    <!-- QUIZ SCREEN -->
+    <div class="screen" id="quiz-screen">
+      <div class="quiz-top">
+        <div><span id="q-counter">Question 1/10</span></div>
+        <div class="lives" id="lives-display"></div>
+      </div>
+
+      <div>
+        <span class="tag tag-cat" id="q-category-tag">Category</span>
+        <span class="tag" id="q-difficulty-tag">Difficulty</span>
+      </div>
+
+      <div class="question" id="question-text">Question text</div>
+      <div class="options" id="options-container"></div>
+      <div class="feedback" id="feedback-text"></div>
+      <div class="explanation" id="explanation-text"></div>
+
+      <div class="quiz-bottom">
+        <button class="btn-ghost" id="hint-btn" onclick="useHint()">Use hint (<span id="hints-left">2</span> left)</button>
+        <button class="btn-ghost" id="skip-btn" onclick="skipQuestion()">Skip</button>
+      </div>
+    </div>
+
+    <!-- QUIZ RESULTS -->
+    <div class="screen" id="quiz-results-screen">
+      <div class="result-banner">
+        <div class="status" id="quiz-result-status">GAME OVER — YOUR RESULTS</div>
+        <h2 id="quiz-result-headline">Nice run!</h2>
+      </div>
+
+      <div class="score-grid">
+        <div class="score-cell"><div class="val" id="quiz-result-score">0</div><div class="lbl">Points</div></div>
+        <div class="score-cell"><div class="val" id="quiz-result-accuracy">0%</div><div class="lbl">Accuracy</div></div>
+        <div class="score-cell"><div class="val" id="quiz-result-correct">0/0</div><div class="lbl">Correct</div></div>
+        <div class="score-cell"><div class="val" id="quiz-result-streak">0</div><div class="lbl">Best streak</div></div>
+      </div>
+
+      <div class="verdict" id="quiz-result-verdict"></div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="backToMenu()">Home</button>
+        <button class="btn-primary" onclick="startQuiz()">Play Again</button>
+      </div>
+    </div>
+
+    <!-- MINEFIELD SETUP -->
+    <div class="screen" id="mine-setup-screen">
+      <div class="field">
+        <label for="mine-difficulty-select">Difficulty</label>
+        <select id="mine-difficulty-select">
+          <option value="hard" selected>Hard — 16 × 16, 40 mines</option>
+          <option value="medium">Medium — 12 × 12, 20 mines</option>
+          <option value="easy">Easy — 9 × 9, 10 mines</option>
+        </select>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-chip"><div class="num" id="stat-size">16×16</div><div class="label">Grid</div></div>
+        <div class="stat-chip"><div class="num" id="stat-mines">40</div><div class="label">Mines</div></div>
+      </div>
+
+      <div class="rules">
+        Reveal every safe cell without hitting a mine. Numbers show how many
+        mines touch that cell. Flag cells you suspect are mines — every mine
+        must stay covered and every safe cell must be revealed to win.
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="backToMenu()">Back to menu</button>
+        <button class="btn-primary" onclick="startMinefield()" style="flex: 2;">Start Game</button>
+      </div>
+    </div>
+
+    <!-- MINEFIELD GAME -->
+    <div class="screen" id="mine-game-screen">
+      <div class="game-top">
+        <div class="game-stat"><span id="mines-left">40</span><span class="lbl">mines left</span></div>
+        <div class="game-stat"><span id="timer">0:00</span><span class="lbl">time</span></div>
+      </div>
+
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="reveal-mode-btn" onclick="setCellMode('reveal')">Reveal</button>
+        <button class="mode-btn" id="flag-mode-btn" onclick="setCellMode('flag')">Flag</button>
+      </div>
+
+      <div class="board-wrap"><div id="board"></div></div>
+
+      <div class="game-footer">
+        <button class="btn-secondary" onclick="backToMenu()">Give up</button>
+      </div>
+    </div>
+
+    <!-- MINEFIELD RESULTS -->
+    <div class="screen" id="mine-results-screen">
+      <div class="result-banner">
+        <div class="status" id="mine-result-status">ROUND OVER</div>
+        <h2 id="mine-result-headline">Nice try</h2>
+      </div>
+
+      <div class="score-grid">
+        <div class="score-cell"><div class="val" id="mine-result-time">0:00</div><div class="lbl">Time</div></div>
+        <div class="score-cell"><div class="val" id="mine-result-revealed">0%</div><div class="lbl">Board cleared</div></div>
+      </div>
+
+      <div class="verdict" id="mine-result-verdict"></div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="backToMenu()">Home</button>
+        <button class="btn-primary" onclick="startMinefield()">Play Again</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ==================================================================
+  // Shared navigation
+  // ==================================================================
+  function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+  }
+
+  function backToMenu() {
+    if (mineTimerInterval) clearInterval(mineTimerInterval);
+    document.getElementById("header-kicker").textContent = "Task 1 · Choose a Mode";
+    document.getElementById("header-title").textContent = "Task 1 Arcade";
+    showScreen("mode-screen");
+  }
+
+  function enterQuizSetup() {
+    document.getElementById("header-kicker").textContent = "Task 1 · Quiz Challenge";
+    document.getElementById("header-title").textContent = "Quiz Challenge";
+    showScreen("quiz-setup-screen");
+  }
+
+  function enterMineSetup() {
+    document.getElementById("header-kicker").textContent = "Task 1 · Minefield";
+    document.getElementById("header-title").textContent = "Minefield";
+    updateMineSetupStats();
+    showScreen("mine-setup-screen");
+  }
+
+  // ==================================================================
+  // QUIZ CHALLENGE
+  // ==================================================================
+  const QUESTION_BANK = [
+    { category: "general", difficulty: "easy", points: 10,
+      q: "How many continents are there on Earth?",
+      options: ["5", "6", "7", "8"], correct: 2,
+      explain: "The 7 continents are Asia, Africa, North America, South America, Antarctica, Europe, and Australia." },
+    { category: "general", difficulty: "easy", points: 10,
+      q: "What is the largest ocean on Earth?",
+      options: ["Atlantic", "Indian", "Arctic", "Pacific"], correct: 3,
+      explain: "The Pacific Ocean covers more area than all the continents combined." },
+    { category: "general", difficulty: "medium", points: 20,
+      q: "Which country has the most time zones (including territories)?",
+      options: ["Russia", "USA", "France", "China"], correct: 2,
+      explain: "France spans 12 time zones because of its overseas territories, more than any other country." },
+    { category: "general", difficulty: "medium", points: 20,
+      q: "The Treaty of Westphalia (1648) is widely cited as the origin of which modern concept?",
+      options: ["Democracy", "State sovereignty", "Human rights law", "The United Nations"], correct: 1,
+      explain: "It established the principle of sovereign, non-interfering nation-states, still foundational to international law." },
+    { category: "general", difficulty: "hard", points: 30,
+      q: "Which currency was the first to be issued as legal tender by a government, rather than backed by precious metal, in the 11th century?",
+      options: ["Chinese jiaozi", "Byzantine solidus", "English sterling", "Venetian ducat"], correct: 0,
+      explain: "Jiaozi, issued in Song-dynasty China, is considered the first government-backed paper currency." },
+    { category: "science", difficulty: "easy", points: 10,
+      q: "What gas do plants absorb from the atmosphere during photosynthesis?",
+      options: ["Oxygen", "Nitrogen", "Carbon dioxide", "Hydrogen"], correct: 2,
+      explain: "Plants take in CO2 and release oxygen as a byproduct of photosynthesis." },
+    { category: "science", difficulty: "easy", points: 10,
+      q: "What is the chemical symbol for gold?",
+      options: ["Go", "Gd", "Au", "Ag"], correct: 2,
+      explain: "Au comes from the Latin word 'aurum', meaning gold." },
+    { category: "science", difficulty: "medium", points: 20,
+      q: "What particle is exchanged between nucleons to hold the atomic nucleus together?",
+      options: ["Photon", "Pion", "Neutrino", "Gluon"], correct: 1,
+      explain: "Pions mediate the strong nuclear force between protons and neutrons (the residual strong force)." },
+    { category: "science", difficulty: "medium", points: 20,
+      q: "In genetics, what term describes two different versions of the same gene?",
+      options: ["Genotype", "Allele", "Chromatid", "Locus"], correct: 1,
+      explain: "Alleles are alternative forms of a gene that arise by mutation and occupy the same locus." },
+    { category: "science", difficulty: "hard", points: 30,
+      q: "Which principle explains why you cannot simultaneously know a particle's exact position and momentum?",
+      options: ["Pauli exclusion principle", "Heisenberg uncertainty principle", "Le Chatelier's principle", "Bohr correspondence principle"], correct: 1,
+      explain: "The Heisenberg uncertainty principle sets a fundamental limit on the precision of complementary variables like position and momentum." },
+    { category: "science", difficulty: "hard", points: 30,
+      q: "What is the term for an enzyme that catalyzes the addition of a phosphate group to a molecule?",
+      options: ["Phosphatase", "Kinase", "Ligase", "Isomerase"], correct: 1,
+      explain: "Kinases transfer phosphate groups from ATP to a substrate; phosphatases do the reverse (remove phosphate)." },
+    { category: "programming", difficulty: "easy", points: 10,
+      q: "What does 'CRUD' stand for in software development?",
+      options: ["Create, Read, Update, Delete", "Compile, Run, Undo, Debug", "Copy, Replace, Undo, Deploy", "Create, Run, Update, Deploy"], correct: 0,
+      explain: "CRUD covers the four basic operations of persistent storage: Create, Read, Update, Delete." },
+    { category: "programming", difficulty: "easy", points: 10,
+      q: "Which data structure uses First-In-First-Out (FIFO) order?",
+      options: ["Stack", "Queue", "Tree", "Graph"], correct: 1,
+      explain: "A queue processes elements in the order they arrive, like a line of people." },
+    { category: "programming", difficulty: "medium", points: 20,
+      q: "What is the average time complexity of searching in a balanced binary search tree?",
+      options: ["O(1)", "O(log n)", "O(n)", "O(n log n)"], correct: 1,
+      explain: "A balanced BST halves the search space at each step, giving O(log n) average lookup time." },
+    { category: "programming", difficulty: "medium", points: 20,
+      q: "In Python, what does the 'GIL' stand for?",
+      options: ["Global Interpreter Lock", "General Instance Loader", "Garbage-Instance List", "Generic Iteration Layer"], correct: 0,
+      explain: "The Global Interpreter Lock ensures only one thread executes Python bytecode at a time in CPython." },
+    { category: "programming", difficulty: "hard", points: 30,
+      q: "What is the worst-case time complexity of Quicksort, and when does it occur?",
+      options: ["O(n log n), sorted input", "O(n^2), consistently poor pivot choice", "O(n^2), random input", "O(n log n), reverse-sorted input"], correct: 1,
+      explain: "Quicksort degrades to O(n^2) when the pivot repeatedly splits the array very unevenly, e.g. always picking the smallest/largest element as pivot on sorted data." },
+    { category: "programming", difficulty: "hard", points: 30,
+      q: "Which consistency model guarantees that once a write completes, all subsequent reads (from any node) see that write?",
+      options: ["Eventual consistency", "Strong consistency", "Causal consistency", "Read-your-writes consistency"], correct: 1,
+      explain: "Strong consistency requires every read after a write to immediately reflect that write, across the entire system." },
+    { category: "programming", difficulty: "hard", points: 30,
+      q: "In Big-O terms, what is the time complexity of building a heap from an unsorted array using heapify (bottom-up)?",
+      options: ["O(n log n)", "O(n)", "O(n^2)", "O(log n)"], correct: 1,
+      explain: "Although each heapify call is O(log n), the total work across all levels sums to O(n) due to most nodes being near the bottom." },
+  ];
+
+  let gameQuestions = [];
+  let currentIndex = 0;
+  let quizLives = 3;
+  let hintsLeft = 2;
+  let quizScore = 0;
+  let correctCount = 0;
+  let wrongCount = 0;
+  let currentStreak = 0;
+  let bestStreak = 0;
+  let quizAnswered = false;
+  let eliminatedOptions = [];
+  const TOTAL_QUESTIONS = 10;
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildQuestionPool() {
+    const category = document.getElementById("category-select").value;
+    const difficulty = document.getElementById("difficulty-select").value;
+    let pool = QUESTION_BANK.filter(q => {
+      const catMatch = category === "mixed" || q.category === category;
+      const diffMatch = difficulty === "mixed" || q.difficulty === difficulty;
+      return catMatch && diffMatch;
+    });
+    pool = shuffle(pool);
+    return pool.slice(0, Math.min(TOTAL_QUESTIONS, pool.length));
+  }
+
+  function startQuiz() {
+    gameQuestions = buildQuestionPool();
+    if (gameQuestions.length === 0) {
+      alert("No questions match that combination — try a different category or difficulty.");
+      return;
+    }
+    currentIndex = 0;
+    quizLives = 3;
+    hintsLeft = 2;
+    quizScore = 0;
+    correctCount = 0;
+    wrongCount = 0;
+    currentStreak = 0;
+    bestStreak = 0;
+
+    document.getElementById("header-kicker").textContent = "Task 1 · Quiz Challenge";
+    document.getElementById("header-title").textContent = "Quiz Challenge";
+    showScreen("quiz-screen");
+    renderQuestion();
+  }
+
+  function renderLives() {
+    const container = document.getElementById("lives-display");
+    container.innerHTML = "";
+    for (let i = 0; i < 3; i++) {
+      const span = document.createElement("span");
+      span.textContent = "♥";
+      if (i >= quizLives) span.classList.add("life-lost");
+      container.appendChild(span);
+    }
+  }
+
+  function renderQuestion() {
+    quizAnswered = false;
+    eliminatedOptions = [];
+    const q = gameQuestions[currentIndex];
+    document.getElementById("q-counter").textContent = `Question ${currentIndex + 1}/${gameQuestions.length}`;
+    renderLives();
+
+    const catLabels = { general: "General Knowledge", science: "Science", programming: "Programming & CS" };
+    document.getElementById("q-category-tag").textContent = catLabels[q.category];
+
+    const diffTag = document.getElementById("q-difficulty-tag");
+    diffTag.textContent = q.difficulty[0].toUpperCase() + q.difficulty.slice(1);
+    diffTag.className = "tag tag-diff-" + q.difficulty;
+
+    document.getElementById("question-text").textContent = q.q;
+    document.getElementById("feedback-text").textContent = "";
+    document.getElementById("feedback-text").className = "feedback";
+    document.getElementById("explanation-text").textContent = "";
+    document.getElementById("hints-left").textContent = hintsLeft;
+    document.getElementById("hint-btn").disabled = hintsLeft === 0;
+    document.getElementById("skip-btn").disabled = false;
+
+    const container = document.getElementById("options-container");
+    container.innerHTML = "";
+    const letters = ["A", "B", "C", "D"];
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement("button");
+      btn.className = "option";
+      btn.innerHTML = `<span class="letter">${letters[i]}</span> <span>${opt}</span>`;
+      btn.onclick = () => selectAnswer(i);
+      container.appendChild(btn);
+    });
+  }
+
+  function selectAnswer(index) {
+    if (quizAnswered) return;
+    quizAnswered = true;
+    const q = gameQuestions[currentIndex];
+    const buttons = document.querySelectorAll("#options-container .option");
+    document.getElementById("skip-btn").disabled = true;
+    document.getElementById("hint-btn").disabled = true;
+    buttons.forEach(b => b.disabled = true);
+
+    const feedback = document.getElementById("feedback-text");
+    const explanation = document.getElementById("explanation-text");
+
+    if (index === q.correct) {
+      buttons[index].classList.add("correct");
+      quizScore += q.points;
+      correctCount++;
+      currentStreak++;
+      bestStreak = Math.max(bestStreak, currentStreak);
+      feedback.textContent = `Correct! +${q.points} pts`;
+      feedback.classList.add("correct-text");
+    } else {
+      buttons[index].classList.add("wrong");
+      buttons[q.correct].classList.add("correct");
+      wrongCount++;
+      currentStreak = 0;
+      quizLives--;
+      feedback.textContent = "Incorrect.";
+      feedback.classList.add("wrong-text");
+    }
+
+    explanation.textContent = q.explain;
+    renderLives();
+
+    setTimeout(() => {
+      if (quizLives <= 0) endQuiz();
+      else advanceQuiz();
+    }, 1600);
+  }
+
+  function skipQuestion() {
+    if (quizAnswered) return;
+    quizAnswered = true;
+    wrongCount++;
+    currentStreak = 0;
+    const q = gameQuestions[currentIndex];
+    const buttons = document.querySelectorAll("#options-container .option");
+    buttons.forEach(b => b.disabled = true);
+    buttons[q.correct].classList.add("correct");
+    document.getElementById("feedback-text").textContent = "Skipped.";
+    document.getElementById("feedback-text").className = "feedback";
+    document.getElementById("explanation-text").textContent = q.explain;
+    setTimeout(() => advanceQuiz(), 1200);
+  }
+
+  function useHint() {
+    if (hintsLeft <= 0 || quizAnswered) return;
+    hintsLeft--;
+    document.getElementById("hints-left").textContent = hintsLeft;
+    document.getElementById("hint-btn").disabled = hintsLeft === 0;
+    const q = gameQuestions[currentIndex];
+    const buttons = document.querySelectorAll("#options-container .option");
+    const wrongIndices = [0, 1, 2, 3].filter(i => i !== q.correct && !eliminatedOptions.includes(i));
+    const toEliminate = wrongIndices[Math.floor(Math.random() * wrongIndices.length)];
+    eliminatedOptions.push(toEliminate);
+    buttons[toEliminate].disabled = true;
+    buttons[toEliminate].style.opacity = "0.35";
+  }
+
+  function advanceQuiz() {
+    currentIndex++;
+    if (currentIndex >= gameQuestions.length) endQuiz();
+    else renderQuestion();
+  }
+
+  function endQuiz() {
+    const total = correctCount + wrongCount;
+    const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+
+    document.getElementById("quiz-result-score").textContent = quizScore;
+    document.getElementById("quiz-result-accuracy").textContent = accuracy + "%";
+    document.getElementById("quiz-result-correct").textContent = `${correctCount}/${total}`;
+    document.getElementById("quiz-result-streak").textContent = bestStreak;
+
+    const headline = document.getElementById("quiz-result-headline");
+    const status = document.getElementById("quiz-result-status");
+    const verdict = document.getElementById("quiz-result-verdict");
+
+    if (quizLives <= 0) {
+      status.textContent = "GAME OVER — OUT OF LIVES";
+      headline.textContent = "Better luck next time";
+      verdict.textContent = `You made it through ${currentIndex} of ${gameQuestions.length} questions.`;
+    } else if (accuracy === 100) {
+      status.textContent = "QUIZ COMPLETE";
+      headline.textContent = "Perfect score!";
+      verdict.textContent = "Flawless run — every answer correct.";
+    } else if (accuracy >= 70) {
+      status.textContent = "QUIZ COMPLETE";
+      headline.textContent = "Strong finish!";
+      verdict.textContent = "Solid performance across the board.";
+    } else {
+      status.textContent = "QUIZ COMPLETE";
+      headline.textContent = "Quiz finished";
+      verdict.textContent = "Room to improve — try a different difficulty.";
+    }
+
+    showScreen("quiz-results-screen");
+  }
+
+  // ==================================================================
+  // MINEFIELD
+  // ==================================================================
+  const DIFFICULTIES = {
+    easy:   { rows: 9,  cols: 9,  mines: 10 },
+    medium: { rows: 12, cols: 12, mines: 20 },
+    hard:   { rows: 16, cols: 16, mines: 40 },
+  };
+
+  let rows, cols, mineCount;
+  let mineBoard = [];
+  let firstClickDone = false;
+  let mineGameOver = false;
+  let cellMode = "reveal";
+  let mineTimerInterval = null;
+  let secondsElapsed = 0;
+  let revealedSafeCount = 0;
+  let totalSafeCells = 0;
+
+  const mineDiffSelect = document.getElementById("mine-difficulty-select");
+  mineDiffSelect.addEventListener("change", updateMineSetupStats);
+
+  function updateMineSetupStats() {
+    const cfg = DIFFICULTIES[mineDiffSelect.value];
+    document.getElementById("stat-size").textContent = `${cfg.rows}×${cfg.cols}`;
+    document.getElementById("stat-mines").textContent = cfg.mines;
+  }
+
+  function setCellMode(m) {
+    cellMode = m;
+    document.getElementById("reveal-mode-btn").classList.toggle("active", m === "reveal");
+    document.getElementById("flag-mode-btn").classList.toggle("active", m === "flag");
+  }
+
+  function startMinefield() {
+    const cfg = DIFFICULTIES[mineDiffSelect.value];
+    rows = cfg.rows;
+    cols = cfg.cols;
+    mineCount = cfg.mines;
+    totalSafeCells = rows * cols - mineCount;
+    revealedSafeCount = 0;
+    firstClickDone = false;
+    mineGameOver = false;
+    secondsElapsed = 0;
+    cellMode = "reveal";
+
+    mineBoard = [];
+    for (let r = 0; r < rows; r++) {
+      const row = [];
+      for (let c = 0; c < cols; c++) row.push({ mine: false, revealed: false, flagged: false, adjacent: 0 });
+      mineBoard.push(row);
+    }
+
+    document.getElementById("mines-left").textContent = mineCount;
+    document.getElementById("timer").textContent = "0:00";
+    setCellMode("reveal");
+
+    document.getElementById("header-kicker").textContent = "Task 1 · Minefield";
+    document.getElementById("header-title").textContent = "Minefield";
+
+    renderMineBoard();
+    showScreen("mine-game-screen");
+
+    if (mineTimerInterval) clearInterval(mineTimerInterval);
+    mineTimerInterval = setInterval(() => {
+      secondsElapsed++;
+      const m = Math.floor(secondsElapsed / 60);
+      const s = secondsElapsed % 60;
+      document.getElementById("timer").textContent = `${m}:${s.toString().padStart(2, "0")}`;
+    }, 1000);
+  }
+
+  function placeMines(excludeR, excludeC) {
+    let placed = 0;
+    while (placed < mineCount) {
+      const r = Math.floor(Math.random() * rows);
+      const c = Math.floor(Math.random() * cols);
+      const tooClose = Math.abs(r - excludeR) <= 1 && Math.abs(c - excludeC) <= 1;
+      if (mineBoard[r][c].mine || tooClose) continue;
+      mineBoard[r][c].mine = true;
+      placed++;
+    }
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++)
+        if (!mineBoard[r][c].mine) mineBoard[r][c].adjacent = countAdjacentMines(r, c);
+  }
+
+  function countAdjacentMines(r, c) {
+    let count = 0;
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const nr = r + dr, nc = c + dc;
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && mineBoard[nr][nc].mine) count++;
+      }
+    return count;
+  }
+
+  function renderMineBoard() {
+    const boardEl = document.getElementById("board");
+    boardEl.innerHTML = "";
+    boardEl.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cellEl = document.createElement("div");
+        cellEl.className = "cell";
+        cellEl.dataset.r = r;
+        cellEl.dataset.c = c;
+        cellEl.onclick = () => handleCellClick(r, c);
+        cellEl.oncontextmenu = (e) => { e.preventDefault(); toggleFlag(r, c); };
+        updateCellDisplay(cellEl, mineBoard[r][c]);
+        boardEl.appendChild(cellEl);
+      }
+    }
+  }
+
+  function updateCellDisplay(cellEl, cell) {
+    cellEl.classList.remove("revealed", "flagged", "mine-hit", "n1","n2","n3","n4","n5","n6","n7","n8");
+    cellEl.textContent = "";
+    if (cell.flagged && !cell.revealed) {
+      cellEl.classList.add("flagged");
+      cellEl.textContent = "⚑";
+      return;
+    }
+    if (!cell.revealed) return;
+    cellEl.classList.add("revealed");
+    if (cell.mine) {
+      cellEl.classList.add("mine-hit");
+      cellEl.textContent = "●";
+    } else if (cell.adjacent > 0) {
+      cellEl.textContent = cell.adjacent;
+      cellEl.classList.add("n" + cell.adjacent);
+    }
+  }
+
+  function handleCellClick(r, c) {
+    if (mineGameOver) return;
+    const cell = mineBoard[r][c];
+    if (cellMode === "flag") { toggleFlag(r, c); return; }
+    if (cell.flagged || cell.revealed) return;
+
+    if (!firstClickDone) {
+      placeMines(r, c);
+      firstClickDone = true;
+    }
+
+    if (cell.mine) {
+      cell.revealed = true;
+      revealAllMines();
+      endMinefield(false);
+      return;
+    }
+
+    floodReveal(r, c);
+    refreshBoardDisplay();
+    if (revealedSafeCount === totalSafeCells) endMinefield(true);
+  }
+
+  function toggleFlag(r, c) {
+    if (mineGameOver) return;
+    const cell = mineBoard[r][c];
+    if (cell.revealed) return;
+    cell.flagged = !cell.flagged;
+    const flaggedCount = countFlags();
+    document.getElementById("mines-left").textContent = mineCount - flaggedCount;
+    refreshBoardDisplay();
+  }
+
+  function countFlags() {
+    let count = 0;
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++)
+        if (mineBoard[r][c].flagged) count++;
+    return count;
+  }
+
+  function floodReveal(startR, startC) {
+    const stack = [[startR, startC]];
+    const visited = new Set();
+    while (stack.length > 0) {
+      const [r, c] = stack.pop();
+      const key = r + "," + c;
+      if (visited.has(key)) continue;
+      visited.add(key);
+      const cell = mineBoard[r][c];
+      if (cell.revealed || cell.flagged || cell.mine) continue;
+      cell.revealed = true;
+      revealedSafeCount++;
+      if (cell.adjacent === 0) {
+        for (let dr = -1; dr <= 1; dr++)
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const nr = r + dr, nc = c + dc;
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) stack.push([nr, nc]);
+          }
+      }
+    }
+  }
+
+  function revealAllMines() {
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++)
+        if (mineBoard[r][c].mine) mineBoard[r][c].revealed = true;
+    refreshBoardDisplay();
+  }
+
+  function refreshBoardDisplay() {
+    const boardEl = document.getElementById("board");
+    const cellEls = boardEl.children;
+    for (let i = 0; i < cellEls.length; i++) {
+      const el = cellEls[i];
+      const r = parseInt(el.dataset.r);
+      const c = parseInt(el.dataset.c);
+      updateCellDisplay(el, mineBoard[r][c]);
+    }
+  }
+
+  function endMinefield(won) {
+    mineGameOver = true;
+    clearInterval(mineTimerInterval);
+    const clearedPct = Math.round((revealedSafeCount / totalSafeCells) * 100);
+    const m = Math.floor(secondsElapsed / 60);
+    const s = secondsElapsed % 60;
+    const timeStr = `${m}:${s.toString().padStart(2, "0")}`;
+
+    document.getElementById("mine-result-time").textContent = timeStr;
+    document.getElementById("mine-result-revealed").textContent = clearedPct + "%";
+
+    const status = document.getElementById("mine-result-status");
+    const headline = document.getElementById("mine-result-headline");
+    const verdict = document.getElementById("mine-result-verdict");
+
+    if (won) {
+      status.textContent = "BOARD CLEARED";
+      headline.textContent = "You defused it!";
+      verdict.textContent = `Cleared the ${rows}×${cols} field in ${timeStr}.`;
+    } else {
+      status.textContent = "MINE HIT";
+      headline.textContent = "Boom.";
+      verdict.textContent = `You cleared ${clearedPct}% of the board before hitting a mine.`;
+    }
+
+    setTimeout(() => showScreen("mine-results-screen"), 900);
+  }
+</script>
+
+</body>
+</html>
